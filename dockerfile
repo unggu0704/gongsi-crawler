@@ -12,13 +12,8 @@ RUN apt-get update && apt-get install -y \
     && apt-get install -y google-chrome-stable \
     && rm -rf /var/lib/apt/lists/* /tmp/chrome-key.gpg
 
-# Python 패키지 설치
-RUN pip install --no-cache-dir \
-    requests \
-    pandas \
-    openpyxl \
-    selenium \
-    webdriver-manager \
-    urllib3
+# lib 파일 복사 및 설치
+COPY lib /tmp/lib
+RUN pip install --no-cache-dir -r /tmp/lib && rm /tmp/lib
 
 WORKDIR /app
