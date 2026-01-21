@@ -67,7 +67,6 @@ class LGUplusCrawler:
         print("\n🔐 쿠키 획득 중 (Selenium)...")
         
         options = Options()
-        # options.add_argument('--headless')  # 서버 환경에서 활성화
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
         options.add_argument('--disable-blink-features=AutomationControlled')
@@ -75,43 +74,85 @@ class LGUplusCrawler:
         options.add_experimental_option('useAutomationExtension', False)
         options.add_argument(f'user-agent={random.choice(self.user_agents)}')
         
+        # Docker 환경 감지
+        import os
+        is_docker = os.getenv('RUNNING_IN_DOCKER') == 'true'
+        
+        if is_docker:
+            options.add_argument('--headless=new')
+            options.add_argument('--ignore-certificate-errors')
+            options.add_argument('--ignore-ssl-errors')
+            options.add_argument('--disable-gpu')
+            options.add_argument('--window-size=1920,1080')
+            options.add_argument('--disable-extensions')
+            options.add_argument('--proxy-server="direct://"')
+            options.add_argument('--proxy-bypass-list=*')
+            options.add_argument('--start-maximized')
+            options.add_argument('--disable-blink-features=AutomationControlled')
+            options.add_experimental_option('excludeSwitches', ['enable-logging'])
+            options.binary_location = '/usr/bin/chromium'
+        else:
+            print("[Local] 환경에서 실행 중")
+        
         try:
-            # ChromeDriver 자동 설치
-            try:
+            if is_docker:
                 from selenium.webdriver.chrome.service import Service
-                from webdriver_manager.chrome import ChromeDriverManager
-                service = Service(ChromeDriverManager().install())
+                service = Service('/usr/bin/chromedriver')
                 driver = webdriver.Chrome(service=service, options=options)
-            except:
-                driver = webdriver.Chrome(options=options)
+            else:
+                try:
+                    from selenium.webdriver.chrome.service import Service
+                    from webdriver_manager.chrome import ChromeDriverManager
+                    service = Service(ChromeDriverManager().install())
+                    driver = webdriver.Chrome(service=service, options=options)
+                except:
+                    driver = webdriver.Chrome(options=options)
             
             # LG U+ 페이지 접속
             url = f'{self.base_url}/mobile/financing-model'
+            print(f"🌐 페이지 접속 중: {url}")
             driver.get(url)
             
+            # 초기 대기
+            time.sleep(5)
+            
+            # 페이지 타이틀 확인
+            print(f"📄 페이지 타이틀: {driver.title}")
+            
             # Cloudflare 체크 대기
-            print("⏳ Cloudflare 우회 중... (15초)")
-            time.sleep(15)
+            print("⏳ Cloudflare 우회 대기 중... (30초)")
+            time.sleep(30)
             
-            # 쿠키 추출 및 필터링 (ASCII 호환만)
+            # 쿠키 추출 전 재확인
+            print(f"📄 최종 페이지 타이틀: {driver.title}")
+            
+            # 쿠키 추출 및 필터링
             cookies = driver.get_cookies()
-            cookie_dict = {}
+            print(f"🍪 전체 쿠키 개수: {len(cookies)}")
             
+            cookie_dict = {}
             for cookie in cookies:
                 try:
                     cookie['value'].encode('latin-1')
                     cookie_dict[cookie['name']] = cookie['value']
                 except UnicodeEncodeError:
-                    pass
+                    print(f"⚠️  쿠키 건너뜀 (인코딩 오류): {cookie['name']}")
             
             driver.quit()
             
-            print(f"✅ 쿠키 획득 완료: {len(cookie_dict)}개")
-            return cookie_dict
+            if cookie_dict:
+                print(f"✅ 쿠키 획득 완료: {len(cookie_dict)}개")
+                return cookie_dict
+            else:
+                print("⚠️  쿠키가 없습니다. Cloudflare가 차단했을 수 있습니다.")
+                return None
             
         except Exception as e:
             print(f"❌ 쿠키 획득 실패: {e}")
+            import traceback
+            traceback.print_exc()
             return None
+
 
     # ==========================================================
     # 2단계: 요금제 코드 리스트 조회
