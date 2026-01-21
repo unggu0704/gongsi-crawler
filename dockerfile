@@ -16,4 +16,6 @@ RUN apt-get update && apt-get install -y \
 COPY lib /tmp/lib
 RUN pip install --no-cache-dir -r /tmp/lib && rm /tmp/lib
 
+COPY skt_crawler.py lguplus_crawler.py /app/
+
 WORKDIR /app
