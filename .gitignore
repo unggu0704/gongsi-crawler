@@ -37,3 +37,5 @@ pip-delete-this-directory.txt
 
 # 환경변수 파일
 .env
+*.xlsx
+logs/
