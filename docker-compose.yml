@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  skt:
+    build: .
+    volumes:
+      - ./output:/app/output
+      - ./skt_crawler.py:/app/skt_crawler.py
+    command: python skt_crawler.py
+
+  lguplus:
+    build: .
+    volumes:
+      - ./output:/app/output
+      - ./lguplus_crawler.py:/app/lguplus_crawler.py
+    command: python lguplus_crawler.py
+    shm_size: 2gb

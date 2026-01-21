@@ -32,7 +32,12 @@ class LGUplusCrawler:
         # 기본 설정 값
         # =========================
         self.base_url = "https://www.lguplus.com"
-        
+
+        # 출력 디렉토리 설정 (Docker 볼륨)
+        import os
+        self.output_dir = "/app/output"
+        os.makedirs(self.output_dir, exist_ok=True)
+
         # 봇 탐지 회피용 User-Agent 목록
         self.user_agents = [
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -299,14 +304,18 @@ class LGUplusCrawler:
         """
         수집된 데이터를 Excel 파일로 저장
         """
+        import os
         print("\n💾 Excel 파일 저장 중...")
-        
+
         # pandas DataFrame으로 변환 및 저장
         df = pd.DataFrame(data)
         filename = f'lguplus_subsidy_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
-        df.to_excel(filename, index=False)
-        
+        # 출력 파일 경로를 /app/output 디렉토리로 설정
+        output_path = os.path.join(self.output_dir, filename)
+        df.to_excel(output_path, index=False)
+
         print(f"✅ 파일 저장 완료: {filename}")
+        print(f"📂 저장 위치: {output_path}")
         return filename
 
     # ==========================================================

@@ -31,6 +31,10 @@ class SKTStableCrawler:
         # =========================
         self.base_url = "https://shop.tworld.co.kr"
         
+        import os
+        self.output_dir = "/app/output"
+        os.makedirs(self.output_dir, exist_ok=True)
+        
         # 요청 헤더 (브라우저 흉내)
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
@@ -249,13 +253,16 @@ class SKTStableCrawler:
         # 4단계: 결과 저장
         # =========================
         if final_data:
+            import os
             df = pd.DataFrame(final_data)
             fname = f"skt_subsidy_final_{datetime.now().strftime('%H%M%S')}.xlsx"
-            df.to_excel(fname, index=False)
+            output_path = os.path.join(self.output_dir, fname)
+            df.to_excel(output_path, index=False)
             
             print(f"\n🎉 수집 성공!")
             print(f"📂 파일명: {fname}")
             print(f"📊 데이터: {len(final_data):,}건\n")
+
         else:
             print("\n❌ 수집된 데이터가 없습니다. 사이트 구조를 확인하세요.")
 
