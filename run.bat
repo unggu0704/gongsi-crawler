@@ -7,22 +7,20 @@ echo.
 
 if not exist output mkdir output
 
-REM 이미지가 없을 때만 빌드
-podman image exists gongsi-crawler
+echo [준비] 이미지 빌드 중...
+podman build -t gongsi-crawler --tls-verify=false . -q
 if %errorlevel% neq 0 (
-    echo [빌드] 처음 실행이거나 이미지가 없습니다. 빌드 중...
-    podman build -t gongsi-crawler -f dockerfile --tls-verify=false .
-    echo.
-) else (
-    echo [빌드] 이미지가 이미 존재합니다. 빌드 건너뛰기.
-    echo.
+    echo 빌드 실패! 오류를 확인하세요.
+    pause
+    exit /b 1
 )
+echo.
+echo [1/2] LG U+ 크롤러 실행 중...
+podman run --rm -v ./output:/app/output -v ./lguplus_crawler.py:/app/lguplus_crawler.py --shm-size=2g gongsi-crawler python lguplus_crawler.py
 
-echo [1/2] SKT 크롤러 실행 중...
-podman run --rm -v ./output:/app/output gongsi-crawler python skt_crawler.py
+echo [2/2] SKT 크롤러 실행 중...
+podman run --rm -v ./output:/app/output -v ./skt_crawler.py:/app/skt_crawler.py gongsi-crawler python skt_crawler.py
 
-echo [2/2] LG U+ 크롤러 실행 중...
-podman run --rm -v ./output:/app/output --shm-size=2g gongsi-crawler python lguplus_crawler.py
 
 echo.
 echo ========================================
