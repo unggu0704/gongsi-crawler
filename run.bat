@@ -5,22 +5,30 @@ echo 공시지원금 크롤러 실행
 echo ========================================
 echo.
 
-if not exist output mkdir output
+REM Podman 실행 확인 및 시작
+echo [준비] Podman 상태 확인 중...
 
-echo [준비] 이미지 빌드 중...
-podman build -t gongsi-crawler --tls-verify=false . -q
+podman machine list 2>nul | findstr "Currently running" >nul
 if %errorlevel% neq 0 (
-    echo 빌드 실패! 오류를 확인하세요.
-    pause
-    exit /b 1
+    echo Podman Machine 시작 중...
+    podman machine start 2>nul
+    if %errorlevel% equ 0 (
+        echo 대기 중... (30초)
+        timeout /t 30 /nobreak >nul
+    )
+    echo Podman 준비 완료!
+) else (
+    echo Podman 이미 실행 중
 )
 echo.
-echo [1/2] LG U+ 크롤러 실행 중...
-podman run --rm -v ./output:/app/output -v ./lguplus_crawler.py:/app/lguplus_crawler.py --shm-size=2g gongsi-crawler python lguplus_crawler.py
 
-echo [2/2] SKT 크롤러 실행 중...
-podman run --rm -v ./output:/app/output -v ./skt_crawler.py:/app/skt_crawler.py gongsi-crawler python skt_crawler.py
+if not exist output mkdir output
 
+echo [1/2] SKT 크롤러 실행 중...
+podman run --rm -v ./output:/app/output gongsi-crawler python -u skt_crawler.py
+
+echo [2/2] LG U+ 크롤러 실행 중...
+podman run --rm -v ./output:/app/output --shm-size=2g gongsi-crawler python -u lguplus_crawler.py
 
 echo.
 echo ========================================
